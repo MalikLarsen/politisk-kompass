@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Politisk Kompas – Interaktiv</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f4f4f4;
+      text-align: center;
+    }
+    h1 {
+      color: #003366;
+    }
+    svg {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      margin-top: 20px;
+    }
+    .tooltip {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 14px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      max-width: 250px;
+      line-height: 1.4;
+    }
+    footer {
+      margin-top: 40px;
+      color: #666;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Det Politiske Kompas</h1>
+<p>Aksen fra venstre mod højre viser økonomisk politik (venstreorienteret ↔ højreorienteret)</p>
+<p>Aksen op-ned viser værdipolitik (frihed ↔ autoritet)</p>
+
+<div id="tooltip" class="tooltip"></div>
+<svg width="600" height="600"></svg>
+
+<div style="margin-top: 20px;">
+  <label for="xInput">Økonomisk (−100 til 100):</label>
+  <input type="range" id="xInput" min="-100" max="100" value="0">
+  <label for="yInput">Værdipolitisk (−100 til 100):</label>
+  <input type="range" id="yInput" min="-100" max="100" value="0">
+</div>
+
+<footer style="margin-top: 40px; color: #003366; font-size: 14px;">
+  &copy; 2025 <strong>Politisk Analyse</strong>. Udarbejdet til samfundsfagsprojekt af <strong>Malik Larsen</strong>.
+</footer>
+
+
+<script>
+const partier = [
+  { navn: "SF", x: -80, y: 60, farve: "#1b9e77", stiftet: "1959", leder: "Pia Olsen Dyhr", fokus: "Klima, social retfærdighed" },
+  { navn: "Socialdemokratiet", x: -40, y: 20, farve: "#e41a1c", stiftet: "1871", leder: "Mette Frederiksen", fokus: "Velfærd, arbejdsmarked" },
+  { navn: "Moderaterne", x: 0, y: 0, farve: "#984ea3", stiftet: "2021", leder: "Lars Løkke Rasmussen", fokus: "Midtepolitik, reformer" },
+  { navn: "Venstre", x: 40, y: -10, farve: "#377eb8", stiftet: "1870", leder: "Troels Lund Poulsen", fokus: "Erhverv, lav skat" },
+  { navn: "Liberal Alliance", x: 70, y: 70, farve: "#ff7f00", stiftet: "2007", leder: "Alex Vanopslagh", fokus: "Frihed, lav skat, unge" },
+  { navn: "Danmarksdemokraterne", x: 30, y: -60, farve: "#4daf4a", stiftet: "2022", leder: "Inger Støjberg", fokus: "Kultur, decentralisering" }
+];
+
+const svg = d3.select("svg");
+const tooltip = d3.select("#tooltip");
+const width = +svg.attr("width");
+const height = +svg.attr("height");
+const centerX = width / 2;
+const centerY = height / 2;
+
+svg.append("line").attr("x1", centerX).attr("x2", centerX).attr("y1", 0).attr("y2", height).attr("stroke", "#aaa");
+svg.append("line").attr("y1", centerY).attr("y2", centerY).attr("x1", 0).attr("x2", width).attr("stroke", "#aaa");
+
+const defs = svg.append("defs");
+partier.forEach(d => {
+  const grad = defs.append("radialGradient")
+    .attr("id", "grad-" + d.navn.replace(/\s/g, ""));
+  grad.append("stop").attr("offset", "0%").attr("stop-color", "#fff");
+  grad.append("stop").attr("offset", "100%").attr("stop-color", d.farve);
+});
+
+svg.selectAll("circle.party")
+  .data(partier)
+  .enter()
+  .append("circle")
+  .attr("class", "party")
+  .attr("cx", d => centerX + d.x)
+  .attr("cy", d => centerY - d.y)
+  .attr("r", 14)
+  .attr("fill", d => `url(#grad-${d.navn.replace(/\s/g, "")})`)
+  .style("filter", "drop-shadow(0 0 5px rgba(0,0,0,0.3))")
+  .on("mouseover", (event, d) => {
+    tooltip.style("opacity", 1)
+           .style("left", (event.pageX + 15) + "px")
+           .style("top", (event.pageY - 20) + "px")
+           .html(`<strong>${d.navn}</strong><br>
+                  Stiftet: ${d.stiftet}<br>
+                  Partileder: ${d.leder}<br>
+                  Fokus: ${d.fokus}`);
+  })
+  .on("mouseout", () => tooltip.style("opacity", 0));
+
+svg.append("circle")
+  .attr("id", "userDot")
+  .attr("r", 10)
+  .attr("fill", "black")
+  .style("opacity", 0.8)
+  .style("stroke", "#fff")
+  .style("stroke-width", 2);
+
+function updateUserDot() {
+  const x = +document.getElementById("xInput").value;
+  const y = +document.getElementById("yInput").value;
+  svg.select("#userDot")
+    .attr("cx", centerX + x)
+    .attr("cy", centerY - y);
+}
+updateUserDot();
+
+d3.select("#xInput").on("input", updateUserDot);
+d3.select("#yInput").on("input", updateUserDot);
+</script>
+
+</body>
+</html>
